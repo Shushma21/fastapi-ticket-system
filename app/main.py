@@ -2,6 +2,7 @@ from fastapi  import FastAPI,Depends,HTTPException
 from .database import engine,SessionLocal
 from .import models,schemas
 from sqlalchemy.orm import Session
+from .auth import hash_password,verify_password,create_access_token
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -22,13 +23,15 @@ def register_user(user:schemas.UserCreate,db:Session=Depends(get_db)):
 
 	existing_username = db.query(models.User).filter(models.User.username==user.username).first()
 	if existing_username:
-		raise HTTPException(status_code=400,details="Username already exists")
+		raise HTTPException(status_code=400,detail="Username already exists")
 
 	try:
+		hashed_pwd = hash_password(user.password)
+
 		new_user = models.User(
 			username = user.username,
 			email = user.email,
-			password = user.password,
+			password = hashed_pwd,
 		)
 
 		db.add(new_user)
@@ -45,3 +48,23 @@ def register_user(user:schemas.UserCreate,db:Session=Depends(get_db)):
 @app.get("/")
 def read_root():
 	return {"message":"FastAPI is running"}
+
+
+@app.post("/login/")
+def login(user:schemas.UserLogin,db:Session=Depends(get_db)):
+	db_user = db.query(models.User).filter((models.User.email == user.username) | (models.User.username == user.username)).first()
+
+	if not db_user:
+		raise HTTPException(status_code=404,detail="User not found")
+
+	if not verify_password(user.password,db_user.password):
+		raise HTTPException(status_code=401,detail="Invalid password")
+
+	token = create_access_token(
+		{"sub":db_user.email}
+	)
+
+	return{
+		"access_token":token,
+		"token_type":"bearer"
+	}
