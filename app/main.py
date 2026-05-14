@@ -2,11 +2,14 @@ from fastapi  import FastAPI,Depends,HTTPException
 from .database import engine,SessionLocal
 from .import models,schemas
 from sqlalchemy.orm import Session
-from .auth import hash_password,verify_password,create_access_token
+from .auth import hash_password,verify_password,create_access_token,verify_token
+from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl = "login")
 
 def get_db():
 	db = SessionLocal()
@@ -51,13 +54,14 @@ def read_root():
 
 
 @app.post("/login/")
-def login(user:schemas.UserLogin,db:Session=Depends(get_db)):
-	db_user = db.query(models.User).filter((models.User.email == user.username) | (models.User.username == user.username)).first()
+#def login(user:schemas.UserLogin,db:Session=Depends(get_db)):
+def login(form_data:OAuth2PasswordRequestForm = Depends(),db:Session=Depends(get_db)):
+	db_user = db.query(models.User).filter((models.User.email == form_data.username) | (models.User.username == form_data.username)).first()
 
 	if not db_user:
 		raise HTTPException(status_code=404,detail="User not found")
 
-	if not verify_password(user.password,db_user.password):
+	if not verify_password(form_data.password,db_user.password):
 		raise HTTPException(status_code=401,detail="Invalid password")
 
 	token = create_access_token(
@@ -68,3 +72,10 @@ def login(user:schemas.UserLogin,db:Session=Depends(get_db)):
 		"access_token":token,
 		"token_type":"bearer"
 	}
+
+
+@app.get("/profile/")
+def get_profile(token:str=Depends(oauth2_scheme)):
+	email = verify_token(token)
+
+	return{"message":"Protected route accessed","email":email}

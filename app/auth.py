@@ -1,6 +1,7 @@
 from passlib.context import CryptContext
-from jose import jwt
+from jose import jwt,JWTError
 from datetime import datetime,timedelta
+from fastapi import HTTPException
 
 SECRET_KEY = "mysecretkey"
 ALGORITHM = "HS256"
@@ -30,3 +31,28 @@ def create_access_token(data:dict):
 		SECRET_KEY,
 		algorithm = ALGORITHM
 	)
+
+
+def verify_token(token:str):
+	try:
+		payload = jwt.decode(
+			token,
+			SECRET_KEY,
+			algorithms=[ALGORITHM]
+		)
+
+		email = payload.get("sub")
+		if email is None:
+			raise HTTPException(
+				status_code=401,
+				details = "Invalid token"
+			)
+		return email
+	except JWTError:
+		raise HTTPException(
+			status_code = 401,
+			detail = "Token is invalid"
+		)
+
+
+
