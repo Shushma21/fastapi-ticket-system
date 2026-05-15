@@ -10,3 +10,7 @@ class UserCreate(BaseModel):
 class UserLogin(BaseModel):
 	username:str
 	password:str
+
+class TicketCreate(BaseModel):
+	title:str
+	description:str

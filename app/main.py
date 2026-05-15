@@ -79,3 +79,25 @@ def get_profile(token:str=Depends(oauth2_scheme)):
 	email = verify_token(token)
 
 	return{"message":"Protected route accessed","email":email}
+
+
+
+@app.post("/tickets/")
+def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),token:str=Depends(oauth2_scheme)):
+	email = verify_token(token)
+
+	user = db.query(models.User).filter(models.User.email == email).first()
+	
+	new_ticket = models.Ticket(
+			title=ticket.title,
+			description = ticket.description,
+			created_by = user.id)
+
+	db.add(new_ticket)
+	db.commit()
+	db.refresh(new_ticket)
+
+	return{
+		"message":"Ticket created successfully",
+		"ticket_id":new_ticket.id
+	}
