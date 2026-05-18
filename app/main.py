@@ -2,7 +2,7 @@ from fastapi  import FastAPI,Depends,HTTPException
 from .database import engine,SessionLocal
 from .import models,schemas
 from sqlalchemy.orm import Session
-from .auth import hash_password,verify_password,create_access_token,verify_token
+from .auth import hash_password,verify_password,create_access_token,verify_token,get_current_user
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 
 models.Base.metadata.create_all(bind=engine)
@@ -101,3 +101,14 @@ def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),token:s
 		"message":"Ticket created successfully",
 		"ticket_id":new_ticket.id
 	}
+
+
+
+@app.get("/tickets/")
+def get_tickers(db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
+	if current_user.role == "admin":
+		tickets = db.query(models.Ticket).all()
+	else:
+		tickets = db.query(models.Ticket).filter(models.Ticket.created_by == current_user.id).all()
+
+	return tickets

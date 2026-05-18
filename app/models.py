@@ -9,6 +9,8 @@ class User(Base):
 	username = Column(String,unique=True)
 	email = Column(String,unique=True)
 	password = Column(String)
+	role = Column(String,default="user")
+	is_login = Column(Integer,default=0)
 	is_deleted = Column(Integer,default=0)
 	created_date = Column(Date,default=date.today)
 
