@@ -112,3 +112,37 @@ def get_tickers(db:Session=Depends(get_db),current_user:models.User=Depends(get_
 		tickets = db.query(models.Ticket).filter(models.Ticket.created_by == current_user.id).all()
 
 	return tickets
+
+
+
+@app.put("/tickets/{ticket_id}/status")
+def update_ticket_status(ticket_id:int,ticket_data:schemas.TicketStatusUpdate,db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
+	if current_user.role != "admin":
+		raise HTTPException(status_code=403,detail="Only admin can update ticket status")
+
+	ticket = db.query(models.Ticket).filter(models.Ticket.id == ticket_id).first()
+
+	if not ticket:
+		raise HTTPException(status_code = 404,detail="Ticket not found")
+
+	ticket.status = ticket_data.status
+	db.commit()
+
+	return{"message":"Ticket status updated"}
+
+
+
+@app.put("/tickets/{ticket_id}/assign")
+def assign_ticket(ticket_id:int,assign_data:schemas.AssignTicket,db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
+	if current_user.role!="admin":
+		raise HTTPException(status_code=403,detail="Only admin can assign tickets")
+
+	ticket = db.query(models.Ticket).filter(models.Ticket.id==ticket_id).first()
+
+	if not ticket:
+		raise HTTPException(status_code=404,detail="Ticket not found")
+
+	ticket.assigned_to = assign_data.assigned_to
+	db.commit()
+
+	return {"message":"Assigned Ticket successfully"}

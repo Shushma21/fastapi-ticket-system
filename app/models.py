@@ -21,5 +21,6 @@ class Ticket(Base):
 	id = Column(Integer,primary_key=True,index=True)
 	title = Column(String)
 	description = Column(String)
+	assigned_to = Column(Integer,ForeignKey("tbl_users.id"),nullable=True)
 	status = Column(String,default="open")
 	created_by = Column(Integer,ForeignKey("tbl_users.id"))
