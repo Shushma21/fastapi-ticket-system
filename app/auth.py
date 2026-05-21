@@ -1,13 +1,19 @@
+import os
 from passlib.context import CryptContext
 from jose import jwt,JWTError
 from datetime import datetime,timedelta
 from fastapi import HTTPException,Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
+from dotenv import load_dotenv
 from .database import SessionLocal
 from .import models
 
-SECRET_KEY = "mysecretkey"
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("SECRET_KEY environment variable is not set")
 ALGORITHM = "HS256"
 
 pwd_context = CryptContext(

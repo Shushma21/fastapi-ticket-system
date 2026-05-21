@@ -19,4 +19,4 @@ class TicketStatusUpdate(BaseModel):
 	status:str
 
 class AssignTicket(BaseModel):
-	assigned_to:str
+	assigned_to:int
