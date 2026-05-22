@@ -22,24 +22,11 @@ def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),current
 
 
 @router.get("/tickets/")
-def get_tickets(skip:int=0,limit:int=5,status:str=None,search:str=None,db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
-
-	query = db.query(models.Ticket)
-
-	#Role filtering
-	if current_user.role != "admin":
-		query = query.filter(models.Ticket.created_by == current_user.id)
-
-	#status filtering
-	if status:
-		query = query.filter(models.Ticket.status == status)
-
-	#Search filtering
-	if search:
-		query = query.filter(models.Ticket.title.ilike(f"%{search}%"))
-
-	tickets = query.offset(skip).limit(limit).all()
-
+def get_tickets(db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
+	if current_user.role == "admin":
+		tickets = db.query(models.Ticket).all()
+	else:
+		tickets = db.query(models.Ticket).filter(models.Ticket.created_by==current_user.id).all()
 	return tickets
 
 
