@@ -22,7 +22,7 @@ def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),current
 
 
 @router.get("/tickets/")
-def get_tickets(skip:int=0,limit:int=5,status:str=None,search:str=None,db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
+def get_tickets(skip:int=Query(0,ge=0,le=100),limit:int=Query(5,ge=1,le=100),status:str=Query(None,pattern="^(open|closed)$"),search:str=Query(None,example="login"),db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
 
 	query = db.query(models.Ticket)
 
