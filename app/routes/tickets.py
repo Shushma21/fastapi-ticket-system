@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 
 from ..import models,schemas
 from ..auth import get_current_user,get_db
+from ..logger import logger
+from ..exceptions import TicketNotFoundException
 
 router = APIRouter()
 
@@ -23,6 +25,8 @@ def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),current
 
 @router.get("/tickets/")
 def get_tickets(skip:int=Query(0,ge=0,le=100),limit:int=Query(5,ge=1,le=100),status:str=Query(None,pattern="^(open|closed)$"),search:str=Query(None,example="login"),db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
+	
+	logger.info("Tickets API Called")
 
 	query = db.query(models.Ticket)
 
@@ -51,7 +55,8 @@ def update_ticket_status(ticket_id:int,ticket_data:schemas.TicketStatusUpdate,db
 	ticket = db.query(models.Ticket).filter(models.Ticket.id==ticket_id).first()
 
 	if not ticket:
-		raise HTTPException(status_code=404,detail="Ticket not found")
+#		raise HTTPException(status_code=404,detail="Ticket not found")
+		raise TicketNotFoundException(ticket_id)
 
 	ticket.status = ticket_data.status
 	db.commit()
