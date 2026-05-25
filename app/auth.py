@@ -14,7 +14,8 @@ load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY")
 if not SECRET_KEY:
     raise RuntimeError("SECRET_KEY environment variable is not set")
-ALGORITHM = os.getenv("ALGORITHM")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 10))
 
 pwd_context = CryptContext(
 	schemes = ["bcrypt"],
@@ -35,7 +36,7 @@ def verify_password(plain_password,hashed_password):
 
 def create_access_token(data:dict):
 	to_encode = data.copy()
-	expire = datetime.utcnow() + timedelta(minutes=10)
+	expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
 	to_encode.update({"exp":expire})
 
 	return jwt.encode(
@@ -57,7 +58,7 @@ def verify_token(token:str):
 		if email is None:
 			raise HTTPException(
 				status_code=401,
-				details = "Invalid token"
+				detail="Invalid token"
 			)
 		return email
 	except JWTError:
