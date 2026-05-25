@@ -9,7 +9,7 @@ from ..exceptions import TicketNotFoundException
 router = APIRouter()
 
 
-@router.post("/tickets/")
+@router.post("/tickets/",response_model=schemas.TicketOut,status_code=201)
 def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
 	new_ticket = models.Ticket(
 					title=ticket.title,
@@ -20,10 +20,10 @@ def create_ticket(ticket:schemas.TicketCreate,db:Session=Depends(get_db),current
 	db.commit()
 	db.refresh(new_ticket)
 
-	return{"message":"Ticket created successfully","ticket_id":new_ticket.id}
+	return new_ticket
 
 
-@router.get("/tickets/")
+@router.get("/tickets/",response_model=list[schemas.TicketOut])
 def get_tickets(skip:int=Query(0,ge=0,le=100),limit:int=Query(5,ge=1,le=100),status:str=Query(None,pattern="^(open|closed)$"),search:str=Query(None,example="login"),db:Session=Depends(get_db),current_user:models.User=Depends(get_current_user)):
 	
 	logger.info("Tickets API Called")

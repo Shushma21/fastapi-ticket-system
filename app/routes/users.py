@@ -1,14 +1,12 @@
 from fastapi import APIRouter,Depends,HTTPException
 from sqlalchemy.orm import Session
-from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm
 
 from ..import models,schemas
-from ..auth import hash_password,verify_password,create_access_token,verify_token,get_db
+from ..auth import hash_password,verify_password,create_access_token,get_db,get_current_user
 
 
 router = APIRouter()
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 
 @router.post("/register/")
@@ -39,7 +37,7 @@ def register_user(user:schemas.UserCreate,db:Session=Depends(get_db)):
 		raise HTTPException(status_code=500,detail=str(e))
 
 
-@router.post("/login/")
+@router.post("/login/",response_model=schemas.TokenOut)
 def login(form_data:OAuth2PasswordRequestForm=Depends(),db:Session=Depends(get_db)):
 	db_user = db.query(models.User).filter(models.User.username==form_data.username).first()
 
@@ -54,7 +52,6 @@ def login(form_data:OAuth2PasswordRequestForm=Depends(),db:Session=Depends(get_d
 	return{"access_token":token,"token_type":"bearer"}
 
 
-@router.get("/profile/")
-def get_profile(token:str=Depends(oauth2_scheme)):
-	email = verify_token(token)
-	return{"message":"Protected route accessed","email":email}
+@router.get("/profile/",response_model=schemas.UserOut)
+def get_profile(current_user:models.User=Depends(get_current_user)):
+	return current_user
